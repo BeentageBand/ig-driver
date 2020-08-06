@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Local Files
+*driver
+example.ini
+.profile
+
+# PyCharm
+.idea
