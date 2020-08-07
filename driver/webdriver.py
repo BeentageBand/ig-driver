@@ -1,5 +1,4 @@
 import logging
-import random
 import time
 
 from selenium import webdriver
@@ -16,6 +15,7 @@ SCROLL_LIMIT = 1
 WebDriver
 A wrapper for Instagram
 '''
+
 
 class WebDriver:
 
@@ -93,8 +93,6 @@ class WebDriver:
         logger.debug(pic_hrefs)
         return pic_hrefs
 
-
-
     def like_post(self, post):
         self.driver.get(post)
         self._scroll(times=1)
@@ -117,7 +115,7 @@ class WebDriver:
             # selected_comment = random.choice(comments)
             selected_comment = '.'
             logger.debug('Comment on post %s - %s' % (post, selected_comment))
-            self._click_element('//textarea[@aria-label="Add a comment…"]', timeout=10*WAIT_TIME_SECS)
+            self._click_element('//textarea[@aria-label="Add a comment…"]', timeout=10 * WAIT_TIME_SECS)
             self._write_in_textbox('//textarea[@aria-label="Add a comment…"]', selected_comment)
             logger.info('Posting..')
             self._click_element("//button[contains(text(), 'Post')]", warning_msg='Skip click Post')
