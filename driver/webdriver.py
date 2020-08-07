@@ -1,19 +1,23 @@
 import logging
+import random
 import time
-from logging import Logger
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.expected_conditions import *
 from selenium.webdriver.support.ui import WebDriverWait
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+WAIT_TIME_SECS = 2
+SCROLL_LIMIT = 1
 
+'''
+WebDriver
+A wrapper for Instagram
+'''
 
 class WebDriver:
-    logger: Logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    WAIT_TIME_SECS = 2
-    SCROLL_LIMIT = 1
 
     def __init__(self, username, password, driver=webdriver.Chrome()):
         self.IG_PREFIX = u'https://www.instagram.com'
@@ -36,13 +40,11 @@ class WebDriver:
         wait = WebDriverWait(self.driver, timeout)
         present_elem = presence_of_element_located((by, path))
         elem = wait.until(present_elem, 'Element not found')
-        if elem:
-            elem.clear()
-            elem.send_keys(input_keys)
-        else:
-            logger.warning('Skip writing in textbook')
+        elem.clear()
+        elem = wait.until(present_elem, 'Element not found')
+        elem.send_keys(input_keys)
 
-    def _scroll_and_get(self, timeout=WAIT_TIME_SECS, times=SCROLL_LIMIT):
+    def _scroll(self, timeout=WAIT_TIME_SECS, times=SCROLL_LIMIT):
         prev, curr = 0, 1
         it = 0
         while prev != curr and it < times:
@@ -67,28 +69,60 @@ class WebDriver:
                             warning_msg='Skip click login button', timeout=2 * WAIT_TIME_SECS)
         self._click_element("//button[contains(text(), 'Not Now')]", warning_msg='Skip click not now pop-up')
 
-    def like_photo_by_tag(self, hashtag):
-        logger.info(u'Liking pics in tag %s' % hashtag)
+    def get_posts_by_hashtag(self, hashtag):
+        logger.info(u'Get posts by hashtag #%s' % hashtag)
         self.driver.get(u'%s/explore/tags/%s/' % (self.IG_PREFIX, hashtag))
-        self._scroll_and_get(timeout=2 * WAIT_TIME_SECS)
+        self._scroll(timeout=2 * WAIT_TIME_SECS)
         time.sleep(5 * WAIT_TIME_SECS)
         hrefs = self._inspect(lambda x: self.driver.find_elements_by_xpath(x), '//a[@href]')
         pic_hrefs = [elem.get_attribute('href') for elem in hrefs]
-        logger.info('%s photos: %d' % (hashtag, len(pic_hrefs)))
-        logger.info(pic_hrefs)
         pic_hrefs = [href for href in pic_hrefs if '%s/p/' % self.IG_PREFIX in href]
-        logger.info(pic_hrefs)
+        logger.info('%s photos: %d' % (hashtag, len(pic_hrefs)))
+        logger.debug(pic_hrefs)
+        return pic_hrefs
 
-        for pic in pic_hrefs:
-            self.driver.get(pic)
-            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-            time.sleep(WAIT_TIME_SECS)
-            try:
-                wait = WebDriverWait(self.driver, WAIT_TIME_SECS)
-                inspected = presence_of_element_located((By.XPATH, '//*[name()="svg" and @aria-label="Like"]'))
-                wait.until(inspected, 'Unable to like').click()
-                logger.info('Liking %s ...' % pic)
-                time.sleep(18 * WAIT_TIME_SECS)
-            except Exception as e:
-                logger.error(e)
-                time.sleep(2 * WAIT_TIME_SECS)
+    def get_posts_by_username(self, username):
+        logger.info(u'Get posts by username @%s' % username)
+        self.driver.get(u'%s/%s' % (self.IG_PREFIX, username))
+        self._scroll(timeout=2 * WAIT_TIME_SECS)
+        time.sleep(5 * WAIT_TIME_SECS)
+        hrefs = self._inspect(lambda x: self.driver.find_elements_by_xpath(x), '//a[@href]')
+        pic_hrefs = [elem.get_attribute('href') for elem in hrefs]
+        pic_hrefs = [href for href in pic_hrefs if '%s/p/' % self.IG_PREFIX in href]
+        logger.info('%s photos: %d' % (username, len(pic_hrefs)))
+        logger.debug(pic_hrefs)
+        return pic_hrefs
+
+
+
+    def like_post(self, post):
+        self.driver.get(post)
+        self._scroll(times=1)
+        time.sleep(2 * WAIT_TIME_SECS)
+        try:
+            wait = WebDriverWait(self.driver, WAIT_TIME_SECS)
+            inspected = presence_of_element_located((By.XPATH, '//*[name()="svg" and @aria-label="Like"]'))
+            wait.until(inspected, 'Unable to like').click()
+            logger.info('Liking %s ...' % post)
+            time.sleep(18 * WAIT_TIME_SECS)
+        except Exception as e:
+            logger.error(e)
+            time.sleep(2 * WAIT_TIME_SECS)
+
+    def comment_on_post(self, post, comments=[]):
+        self.driver.get(post)
+        self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+        time.sleep(WAIT_TIME_SECS)
+        try:
+            # selected_comment = random.choice(comments)
+            selected_comment = '.'
+            logger.debug('Comment on post %s - %s' % (post, selected_comment))
+            self._click_element('//textarea[@aria-label="Add a comment…"]', timeout=10*WAIT_TIME_SECS)
+            self._write_in_textbox('//textarea[@aria-label="Add a comment…"]', selected_comment)
+            logger.info('Posting..')
+            self._click_element("//button[contains(text(), 'Post')]", warning_msg='Skip click Post')
+            time.sleep(18 * WAIT_TIME_SECS)
+        except Exception as e:
+            logger.error(e)
+            raise e
+            time.sleep(2 * WAIT_TIME_SECS)
