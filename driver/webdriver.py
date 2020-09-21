@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 
 from selenium import webdriver
@@ -8,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-WAIT_TIME_SECS = 2
+WAIT_TIME_SECS = 5
 SCROLL_LIMIT = 1
 
 '''
@@ -93,7 +94,7 @@ class WebDriver:
         logger.debug(pic_hrefs)
         return pic_hrefs
 
-    def like_post(self, post):
+    def like_post(self, post, skip_if=[]):
         self.driver.get(post)
         self._scroll(times=1)
         time.sleep(2 * WAIT_TIME_SECS)
@@ -107,13 +108,12 @@ class WebDriver:
             logger.error(e)
             time.sleep(2 * WAIT_TIME_SECS)
 
-    def comment_on_post(self, post, comments=[]):
+    def comment_on_post(self, post, comments=[], skip_if=[]):
         self.driver.get(post)
         self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
         time.sleep(WAIT_TIME_SECS)
         try:
-            # selected_comment = random.choice(comments)
-            selected_comment = '.'
+            selected_comment = random.choice(comments)
             logger.debug('Comment on post %s - %s' % (post, selected_comment))
             self._click_element('//textarea[@aria-label="Add a comment…"]', timeout=10 * WAIT_TIME_SECS)
             self._write_in_textbox('//textarea[@aria-label="Add a comment…"]', selected_comment)
