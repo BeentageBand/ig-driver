@@ -19,6 +19,7 @@ The script runs once and does the following:
 
 # Setup development
 
+## Workspace setup
 On workspace run:
 ```
 python3 -m venv venv
@@ -30,12 +31,11 @@ Ensure to have SeleniumDriver installed.
 For installation steps, follow https://www.nuget.org/packages/Selenium.WebDriver:w
  
  
- # Setup Config
- 
+ ## Config setup
  Create a file `example.ini` in the workspace path.
  Copy and refer to `.example.ini` template.
  
- # Run
+ ## Run script
  
 ```
 python3 run.py
